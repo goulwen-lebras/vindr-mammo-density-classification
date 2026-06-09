@@ -1,161 +1,247 @@
 # Breast Density Classification on VinDr-Mammo with PyTorch
 
-## Overview
+## 1. Overview
 
-This project aims to develop a reproducible **deep learning baseline** for breast density classification from mammography images using **PyTorch**.
+This repository is a portfolio and learning project focused on **breast density classification from mammography images** using **PyTorch**.
 
-The first objective is to classify breast density into two clinically meaningful groups:
+The first target task is a binary classification of BI-RADS breast density:
 
-- **Low density**: BI-RADS A/B
-- **High density**: BI-RADS C/D
+- **low density**: BI-RADS density A/B;
+- **high density**: BI-RADS density C/D.
 
-The second objective is to extend the task to the four ordered BI-RADS breast density categories:
+A later extension may address the four-class ordinal task:
 
-- **BI-RADS A**
-- **BI-RADS B**
-- **BI-RADS C**
-- **BI-RADS D**
+- BI-RADS density A;
+- BI-RADS density B;
+- BI-RADS density C;
+- BI-RADS density D.
 
-This project is designed as a first step toward **medical imaging AI**, **ordinal-aware learning**, and **multimodal representation learning** for breast cancer decision support.
+The project is developed progressively: first with a fully tested dummy dataset, then with real VinDr-Mammo DICOM integration, and finally with stronger training, evaluation and reporting.
 
-## Clinical and Scientific Motivation
+## 2. Motivation
 
-Breast density is an important imaging biomarker in mammography. Dense breast tissue can reduce mammographic sensitivity and may complicate lesion detection. It is also clinically relevant for breast cancer screening and risk assessment.
+This project was motivated by my interest in a PhD proposal on **Multimodal Representation Learning for Breast Cancer Decision Support from Imaging and Clinical Data**. The proposal focuses on the integration of medical imaging and structured clinical data, with particular attention to breast cancer, multimodal representation learning, self-supervised learning, real-world data imperfections, and ordinal clinical targets such as BI-RADS categories.
 
-From a machine learning perspective, breast density classification is a relevant task because BI-RADS density categories are not independent classes: they follow an ordinal structure from **A to D**. A confusion between **A and B** is less severe than a confusion between **A and D**.
+Breast density classification on VinDr-Mammo is used here as a focused and reproducible first step toward these topics. It allows the project to start from a clear medical imaging task before later extensions toward ordinal-aware learning, tabular metadata integration, and multimodal image + clinical data representation learning.
 
-This makes the task suitable for exploring:
+Breast density is an important imaging characteristic in mammography. Dense breast tissue can make image interpretation more difficult and is relevant in breast cancer screening and risk assessment. From a machine-learning perspective, breast density is also an interesting target because the BI-RADS density categories A, B, C and D are **ordered** rather than independent labels.
 
-- medical image classification;
-- class imbalance handling;
-- clinically relevant evaluation metrics;
-- ordinal-aware learning;
-- model interpretability;
-- future multimodal learning with imaging and clinical/tabular data.
+This project is designed to strengthen practical skills in:
 
-## Dataset
+- medical image loading and preprocessing;
+- DICOM handling;
+- PyTorch Dataset and DataLoader design;
+- CNN-based classification;
+- model evaluation with clinically relevant metrics;
+- reproducible engineering practices for medical AI.
 
-The project is intended to use the **VinDr-Mammo** dataset, a publicly available mammography dataset containing breast-level information including BI-RADS assessment and breast density labels.
+## 3. Dataset
 
-The data will not be included directly in this repository. Users should download the dataset from the official source and place it locally in the `data/` directory.
+The intended dataset is **VinDr-Mammo**, officially available through **PhysioNet**:
 
-Expected local structure:
+> Pham, H. H., Nguyen Trung, H., & Nguyen, H. Q. (2022). *VinDr-Mammo: A large-scale benchmark dataset for computer-aided detection and diagnosis in full-field digital mammography* (version 1.0.0). PhysioNet. https://doi.org/10.13026/br2v-7517
+
+The associated Scientific Data paper describes VinDr-Mammo as a dataset of **5,000 full-field digital mammography exams**, with four standard views per exam, breast-level assessment, breast density labels, and finding-level annotations.
+
+The data are **not stored in this GitHub repository**. Users must obtain the dataset from the official source and respect the dataset license and access conditions.
+
+Expected external data structure:
 
 ```txt
-data/
-├── raw/
-├── processed/
-├── dummy_images/
-└── metadata.csv
+E:/physionet.org/files/vindr-mammo/1.0.0/
+├── metadata.csv
+├── breast-level_annotations.csv
+├── finding_annotations.csv
+└── images/
+    ├── <study_id>/
+    │   ├── <image_id>.dicom
+    │   ├── <image_id>.dicom
+    │   ├── <image_id>.dicom
+    │   └── <image_id>.dicom
+    └── ...
 ```
 
-## Methodological Approach
+For the current project, the main file is:
 
-This project follows a lightweight **V-model inspired methodology**, adapted to a research-oriented medical AI project.
+```txt
+breast-level_annotations.csv
+```
 
-The goal is to ensure traceability between:
+Important columns for the first baseline:
+
+```txt
+study_id
+image_id
+laterality
+view_position
+height
+width
+breast_birads
+breast_density
+split
+```
+
+The target label is:
+
+```txt
+breast_density
+```
+
+The binary mapping is:
+
+```txt
+A/B -> 0  low density
+C/D -> 1  high density
+```
+
+## 4. Methodological Approach
+
+This project follows a lightweight **V-model inspired methodology**, adapted to a research and portfolio project in biomedical AI.
+
+The goal is to keep traceability between:
 
 1. clinical need;
-2. system requirements;
+2. data and task definition;
 3. software requirements;
 4. modular implementation;
-5. unit verification;
-6. integration verification;
-7. final validation and reporting.
+5. unit testing;
+6. integration testing;
+7. model evaluation;
+8. reporting and limitations.
 
-This approach is used to make the project more structured, reproducible and aligned with good engineering practices in biomedical research.
+This helps separate clinical reasoning, data preparation, software implementation and experimental validation.
 
-## Planned Pipeline
+## 5. Workflow
 
-The planned pipeline is:
+The project is developed in two progressive stages.
+
+### Stage 1 — Dummy pipeline
+
+The first stage validates the complete software pipeline on synthetic data:
 
 ```txt
-Metadata CSV
-→ Image loading
-→ Image preprocessing
+dummy metadata CSV
+→ dummy images
 → PyTorch Dataset
-→ CNN baseline model
-→ Training
-→ Evaluation
-→ Results report
+→ torchvision transforms
+→ DataLoader
+→ ResNet18 model
+→ training loop
+→ evaluation metrics
+→ end-to-end dummy training script
 ```
 
-The first baseline will use:
+This stage does not aim to produce medically meaningful results. Its purpose is to verify that the codebase is modular, testable and functional before introducing real medical images.
 
-- **Framework**: PyTorch
-- **Model**: ResNet18
-- **Input size**: 224×224 initially
-- **Task 1**: binary classification A/B vs C/D
-- **Task 2**: four-class classification A/B/C/D
-- **Metrics**:
-  - accuracy;
-  - macro-F1;
-  - balanced accuracy;
-  - confusion matrix.
+### Stage 2 — VinDr-Mammo integration
 
-## Repository Structure
+The second stage will connect the existing pipeline to real VinDr-Mammo DICOM images:
+
+```txt
+breast-level_annotations.csv
+→ image path creation from study_id and image_id
+→ breast density label mapping
+→ DICOM image loading
+→ PyTorch Dataset
+→ DataLoader
+→ ResNet18 baseline
+→ training and validation
+→ results report
+```
+
+The VinDr-Mammo `split` column will be used carefully. The official test split should remain the test set, while the official training split may be divided into training and validation subsets.
+
+## 6. Repository Structure
+
+Current and planned structure:
 
 ```txt
 vindr-mammo-density-classification/
 ├── configs/
-│   └── resnet18_density.yaml
 ├── data/
+│   └── README.md
 ├── docs/
-│   ├── 01_clinical_need.md
-│   ├── 02_system_requirements.md
-│   ├── 03_software_requirements.md
-│   ├── 04_verification_plan.md
-│   └── 05_validation_plan.md
 ├── notebooks/
-│   └── 01_dataset_exploration.ipynb
 ├── reports/
 │   └── results.md
 ├── src/
+│   ├── create_dummy_dataset.py
 │   ├── dataset.py
-│   ├── preprocessing.py
 │   ├── model.py
 │   ├── train.py
 │   ├── evaluate.py
-│   └── utils.py
+│   ├── run_dummy_training.py
+│   ├── dicom_utils.py                  # planned: DICOM loading
+│   ├── prepare_vindr_metadata.py       # planned: VinDr metadata adapter
+│   ├── run_vindr_smoke_test.py         # planned: real-data smoke test
+│   └── train_vindr.py                  # planned: stronger training script
 ├── tests/
 │   ├── test_dataset.py
-│   └── test_model.py
+│   ├── test_dataloader.py
+│   ├── test_model.py
+│   ├── test_training_step.py
+│   ├── test_train.py
+│   ├── test_evaluate.py
+│   ├── test_dicom_utils.py             # planned
+│   └── test_prepare_vindr_metadata.py  # planned
 ├── .gitignore
 ├── README.md
 └── requirements.txt
 ```
 
-## Current Status
+## 7. Current Implementation
 
-The project is currently in its initial setup phase.
+The following components are already implemented:
 
-Completed:
-
-- project structure;
+- project folder structure;
 - Python virtual environment;
-- installation of core packages;
-- JupyterLab setup;
-- initial V-model documentation structure;
-- environment verification with PyTorch CPU.
+- PyTorch CPU environment verification;
+- `.gitignore` configuration to exclude data, virtual environments and model checkpoints;
+- synthetic dummy image generation;
+- dummy metadata CSV generation;
+- `MammographyDensityDataset`;
+- torchvision image transforms;
+- DataLoader batch creation;
+- ResNet18 baseline model;
+- binary and four-class output shape tests;
+- minimal training step;
+- `train_one_epoch()`;
+- `evaluate_model()`;
+- evaluation metrics:
+  - accuracy;
+  - macro-F1;
+  - balanced accuracy;
+  - confusion matrix;
+- end-to-end dummy training script: `src/run_dummy_training.py`;
+- initial reporting structure in `reports/results.md`.
 
-Next steps:
+## 8. Next Steps
 
-- create a dummy dataset;
-- implement the PyTorch Dataset class;
-- test image and label loading;
-- implement a ResNet18 baseline;
-- run a first training loop on dummy data;
-- prepare the real VinDr-Mammo metadata pipeline.
+The next development steps are:
 
-## Environment Setup
+- add DICOM image loading with `pydicom`;
+- adapt the Dataset to support `.dicom` and `.dcm` files;
+- create a VinDr-Mammo metadata adapter;
+- generate image paths from `study_id` and `image_id`;
+- map `breast_density` to binary labels:
+  - A/B → 0;
+  - C/D → 1;
+- use the official VinDr-Mammo `split` column properly;
+- run a real-data smoke test on a small subset;
+- run a first mini-training experiment on VinDr-Mammo;
+- save metrics and confusion matrix;
+- update `reports/results.md` with real experiment results;
+- improve documentation and limitations.
 
-Create and activate a Python virtual environment:
+## 9. Installation
+
+Create a virtual environment:
 
 ```bash
 python -m venv venv
 ```
 
-On Windows cmd:
+Activate it on Windows cmd:
 
 ```bash
 venv\Scripts\activate.bat
@@ -167,92 +253,149 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Check the installation:
+For the future DICOM stage, `pydicom` is required:
+
+```bash
+pip install pydicom
+```
+
+Check PyTorch:
 
 ```python
 import torch
 import torchvision
-import timm
-import sklearn
-import cv2
 
 print("PyTorch version:", torch.__version__)
 print("Torchvision version:", torchvision.__version__)
 print("CUDA available:", torch.cuda.is_available())
 ```
 
-A CPU-only PyTorch installation is sufficient for local development and testing. Heavier training can later be performed on Google Colab or another GPU environment.
+Local CPU execution is sufficient for code development, unit tests and smoke tests. Heavier training should be performed on a GPU environment such as Google Colab, Kaggle, a lab server or another remote GPU machine.
 
-## Development Roadmap
+## 10. Usage
 
-### Phase 1 — Project setup
+### Run all tests
 
-- Create project structure
-- Set up Python environment
-- Create initial documentation
-- Connect repository to GitHub
+```bash
+pytest
+```
 
-### Phase 2 — Dummy pipeline
+### Run the current dummy pipeline
 
-- Generate dummy images
-- Create dummy metadata CSV
-- Implement PyTorch Dataset
-- Verify image and label loading
-- Test model output shape
+```bash
+python src\run_dummy_training.py
+```
 
-### Phase 3 — Baseline model
+This validates the software pipeline, but the numerical results are not medically meaningful because the images are synthetic.
 
-- Implement ResNet18 baseline
-- Train on a small subset
-- Compute first metrics
-- Save initial results
+### Planned VinDr-Mammo commands
 
-### Phase 4 — VinDr-Mammo integration
+After downloading VinDr-Mammo outside the repository, the planned metadata preparation command is:
 
-- Download and organize VinDr-Mammo
-- Prepare metadata CSV
-- Map BI-RADS density labels
-- Implement real image preprocessing
-- Train binary density classifier
+```bash
+python src\prepare_vindr_metadata.py
+```
 
-### Phase 5 — Evaluation and reporting
+The planned real-data smoke test command is:
 
-- Evaluate accuracy, macro-F1 and balanced accuracy
-- Generate confusion matrix
-- Analyze errors
-- Document limitations
+```bash
+python src\run_vindr_smoke_test.py
+```
 
-### Phase 6 — Extensions
+The smoke test will check that:
+
+- real DICOM files are found;
+- DICOM images can be loaded;
+- labels are correctly mapped;
+- the Dataset and DataLoader work;
+- the model can process real batches;
+- one short training/evaluation cycle runs without crashing.
+
+## 11. Evaluation
+
+The first baseline will report:
+
+- accuracy;
+- macro-F1;
+- balanced accuracy;
+- confusion matrix.
+
+Balanced accuracy and macro-F1 are especially important because medical datasets can be imbalanced. Accuracy alone can be misleading if one class is over-represented.
+
+For a stronger version, the project may add:
+
+- AUC for binary A/B vs C/D classification;
+- per-view analysis by CC and MLO;
+- per-laterality analysis;
+- comparison between binary and four-class classification;
+- ordinal-aware evaluation.
+
+## 12. Data and Git Policy
+
+The repository must not contain:
+
+- VinDr-Mammo DICOM files;
+- raw medical images;
+- generated local metadata with absolute paths;
+- model checkpoints;
+- virtual environments.
+
+Recommended `.gitignore` entries:
+
+```gitignore
+data/*
+!data/README.md
+
+models/
+*.pth
+*.pt
+
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+```
+
+## 13. Limitations
+
+This repository is not a clinical-grade diagnostic system.
+
+Current limitations:
+
+- the implemented pipeline has so far been validated on dummy data;
+- real DICOM integration is still to be completed;
+- no clinically meaningful model performance has been established yet;
+- no external validation has been performed;
+- image preprocessing choices are still preliminary;
+- the first baseline uses reduced image resolution;
+- class imbalance has not yet been fully handled;
+- interpretability methods are not yet implemented.
+
+The project should be understood as a reproducible engineering and learning baseline for medical imaging AI, not as a validated medical device or clinical decision support system.
+
+## 14. Future Work
 
 Possible extensions include:
 
 - four-class BI-RADS density classification;
 - ordinal-aware loss functions;
-- Grad-CAM visualizations;
 - class imbalance strategies;
-- integration of clinical/tabular variables.
+- saved training curves and confusion matrix figures;
+- Grad-CAM visualizations;
+- multimodal image + tabular learning using VinDr-Mammo metadata;
+- self-supervised or representation learning experiments;
+- external validation or cross-dataset analysis if data access allows.
 
-## Limitations
+In relation to the PhD topic, the longer-term direction would be to move from a supervised image-only baseline toward richer patient representations that combine mammography images with structured metadata or clinical variables.
 
-This project is not intended to be a clinical-grade diagnostic system.
+## 15. References
 
-It is a research and portfolio project designed to:
+1. PhD proposal: *Multimodal Representation Learning for Breast Cancer Decision Support from Imaging and Clinical Data*.
+2. Pham, H. H., Nguyen Trung, H., & Nguyen, H. Q. (2022). *VinDr-Mammo: A large-scale benchmark dataset for computer-aided detection and diagnosis in full-field digital mammography* (version 1.0.0). PhysioNet. https://doi.org/10.13026/br2v-7517
+3. Nguyen, H. T. et al. (2023). *VinDr-Mammo: A large-scale benchmark dataset for computer-aided diagnosis in full-field digital mammography*. Scientific Data. https://doi.org/10.1038/s41597-023-02100-7
 
-- build a reproducible medical imaging AI pipeline;
-- explore breast density classification;
-- demonstrate applied PyTorch skills;
-- prepare future work on multimodal medical AI.
-
-Important limitations to document include:
-
-- dataset imbalance;
-- image preprocessing choices;
-- reduced image resolution;
-- lack of external validation;
-- annotation variability;
-- difference between a proof of concept and a clinically validated system.
-
-## Author
+## 16. Author
 
 **Goulwen Le Bras**  
 Biomedical engineer interested in medical imaging, scientific software development, biomedical R&D and artificial intelligence applied to healthcare.
